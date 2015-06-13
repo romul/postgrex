@@ -338,9 +338,14 @@ defmodule Postgrex.Connection do
     sock_opts  = [{:packet, :raw}, :binary] ++ (opts[:socket_options] || [])
     custom     = opts[:extensions] || []
     extensions = custom ++ @default_extensions
+    search_path = opts[:search_path]
 
     command = new_command({:connect, opts}, from)
     queue = :queue.in(command, queue)
+    if search_path do
+      command = new_command({:query, "SET search_path TO #{search_path}", []}, nil)
+      queue = :queue.in(command, queue)
+    end
     types_key = {host, port, Keyword.fetch!(opts, :database), custom}
     s = %{s | queue: queue, extensions: extensions, types_key: types_key}
 
